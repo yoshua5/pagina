@@ -1,0 +1,823 @@
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FeedBrand AI — Transform your existing Instagram</title>
+<meta name="description" content="AI analyzes your existing Instagram content and redesigns it into one consistent visual brand.">
+<style>
+:root{
+  --bg:#07090D; --card:#11141A; --card2:#0D1016; --line:rgba(255,255,255,.08);
+  --text:#F7F8FA; --muted:#8F96A3; --primary:#5B6CFF; --primary2:#7C8BFF;
+  --radius:16px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,"Segoe UI",system-ui,-apple-system,sans-serif;overflow-x:hidden}
+a{color:inherit;text-decoration:none}
+button,input,textarea{font:inherit}
+.hidden{display:none!important}
+.container{max-width:1180px;margin:0 auto;padding:0 24px}
+.app{min-height:100vh;display:flex}
+
+/* ---- generic buttons ---- */
+.btn{border:1px solid var(--line);border-radius:12px;padding:13px 22px;background:var(--card);color:var(--text);cursor:pointer;font-weight:600;font-size:14px;transition:.15s;display:inline-flex;align-items:center;gap:8px}
+.btn:hover{border-color:rgba(255,255,255,.2)}
+.btn.primary{background:linear-gradient(135deg,var(--primary),#8b6cff);border-color:transparent;box-shadow:0 10px 28px rgba(91,108,255,.35)}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn.ghost{background:transparent}
+.btn.sm{padding:8px 14px;font-size:12.5px;border-radius:9px}
+.btn.block{width:100%;justify-content:center}
+.pill{font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#50e29e;background:rgba(80,226,158,.08);border:1px solid rgba(80,226,158,.25);padding:5px 10px;border-radius:20px;display:inline-block}
+
+/* ---- onboarding ---- */
+#screen-onboarding{width:100%;min-height:100vh;display:flex;align-items:center}
+.ob-grid{display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:center;width:100%;padding:60px 0}
+.ob-eyebrow{color:#50e29e;text-transform:uppercase;letter-spacing:.08em;font-size:12px;font-weight:800;margin-bottom:18px}
+.ob-h1{font-size:52px;line-height:1.03;letter-spacing:-.03em;margin:0 0 20px;font-weight:800}
+.ob-h1 span{background:linear-gradient(90deg,#9aa3ff,#c48bff);-webkit-background-clip:text;color:transparent}
+.ob-lead{color:var(--muted);font-size:16.5px;line-height:1.65;max-width:480px;margin-bottom:30px}
+.ob-ctas{display:flex;gap:12px;flex-wrap:wrap}
+.ob-note{margin-top:22px;font-size:12.5px;color:var(--muted)}
+.ob-visual{position:relative;border-radius:22px;overflow:hidden;border:1px solid var(--line);background:var(--card2)}
+.ob-visual .capbar{display:flex;justify-content:space-between;padding:14px 18px;font-size:12px;color:var(--muted);border-bottom:1px solid var(--line)}
+.ob-grid9{display:grid;grid-template-columns:repeat(3,1fr);gap:3px;padding:3px}
+.ob-grid9 canvas{width:100%;display:block;aspect-ratio:1/1;border-radius:2px}
+@media(max-width:920px){.ob-grid{grid-template-columns:1fr}.ob-h1{font-size:38px}}
+
+/* ---- centered flow screens ---- */
+.flow-screen{width:100%;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:60px 20px}
+.flow-card{width:100%;max-width:640px;text-align:center}
+.flow-card h1{font-size:30px;letter-spacing:-.02em;margin:0 0 10px}
+.flow-card p.sub{color:var(--muted);font-size:15px;margin:0 0 34px;line-height:1.6}
+
+/* connect profile card */
+.profile-card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:32px;display:flex;flex-direction:column;align-items:center;gap:6px;margin-bottom:26px}
+.avatar-ring{width:88px;height:88px;border-radius:50%;background:conic-gradient(from 220deg,#f9ce34,#ee2a7b,#6228d7);padding:3px;margin-bottom:10px}
+.avatar-ring>div{width:100%;height:100%;border-radius:50%;background:var(--card);display:grid;place-items:center;font-size:28px;font-weight:800}
+.handle{font-weight:700;font-size:17px}
+.stats{display:flex;gap:34px;margin-top:18px}
+.stats div{text-align:center}
+.stats b{display:block;font-size:19px}
+.stats span{color:var(--muted);font-size:12px}
+.info-box{background:rgba(91,108,255,.08);border:1px solid rgba(91,108,255,.25);color:#c9cfff;border-radius:12px;padding:14px 16px;font-size:13px;margin-bottom:24px;text-align:left}
+
+/* analysis */
+.progress-list{text-align:left;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px;margin-bottom:28px}
+.progress-item{display:flex;align-items:center;gap:12px;padding:9px 0;font-size:13.5px;color:var(--muted)}
+.progress-item.done{color:var(--text)}
+.progress-item .dot{width:16px;height:16px;border-radius:50%;border:2px solid var(--line);flex:none;display:grid;place-items:center;font-size:10px}
+.progress-item.done .dot{border-color:#50e29e;background:#50e29e;color:#07090D}
+.progress-item.active .dot{border-color:var(--primary2);animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+.score-ring{width:150px;height:150px;margin:0 auto 18px;border-radius:50%;display:grid;place-items:center;position:relative}
+.score-ring .inner{width:118px;height:118px;border-radius:50%;background:var(--bg);display:grid;place-items:center;flex-direction:column}
+.score-num{font-size:36px;font-weight:800}
+.score-label{font-size:10px;color:var(--muted);letter-spacing:.06em}
+.metric-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;text-align:left;margin-bottom:28px}
+.metric{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.metric b{display:block;font-size:20px;margin-top:4px}
+.metric span{font-size:12px;color:var(--muted)}
+.bar{height:5px;border-radius:3px;background:rgba(255,255,255,.08);margin-top:8px;overflow:hidden}
+.bar>div{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--primary),#8b6cff)}
+
+/* findings */
+.finding{display:flex;gap:12px;text-align:left;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:10px;font-size:13.5px;line-height:1.55}
+.finding .ico{flex:none;width:26px;height:26px;border-radius:8px;background:rgba(91,108,255,.15);display:grid;place-items:center;font-size:13px}
+.cat-chip-row{display:flex;flex-wrap:wrap;gap:8px;margin:20px 0 30px;justify-content:center}
+.cat-chip{display:flex;align-items:center;gap:7px;background:var(--card);border:1px solid var(--line);border-radius:20px;padding:7px 13px;font-size:12.5px;font-weight:600}
+.cat-chip .sw{width:9px;height:9px;border-radius:50%}
+
+/* style picker */
+.style-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+.style-card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px;cursor:pointer;transition:.15s;text-align:left}
+.style-card:hover{border-color:var(--primary2);transform:translateY(-2px)}
+.style-card.selected{border-color:var(--primary2);box-shadow:0 0 0 2px rgba(91,108,255,.4)}
+.style-grid9{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;border-radius:8px;overflow:hidden;margin-bottom:8px}
+.style-grid9 canvas{width:100%;display:block;aspect-ratio:1/1}
+.style-name{font-size:12.5px;font-weight:700;padding:2px 4px 4px}
+@media(max-width:900px){.style-grid{grid-template-columns:repeat(2,1fr)}}
+
+/* before after */
+.ba-wrap{max-width:820px;margin:0 auto}
+.ba-slider-box{position:relative;border-radius:18px;overflow:hidden;border:1px solid var(--line);user-select:none}
+.ba-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2px}
+.ba-grid canvas{width:100%;display:block;aspect-ratio:1/1}
+.ba-after{position:absolute;top:0;left:0;height:100%;overflow:hidden;width:50%}
+.ba-after .ba-grid{width:calc(3 * 33.333vw)}
+.ba-handle{position:absolute;top:0;bottom:0;left:50%;width:3px;background:#fff;cursor:ew-resize;z-index:5}
+.ba-handle::after{content:"⇔";position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:38px;height:38px;background:#fff;color:#111;border-radius:50%;display:grid;place-items:center;font-size:16px;font-weight:800}
+.ba-label{position:absolute;top:10px;background:rgba(0,0,0,.55);backdrop-filter:blur(4px);padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;letter-spacing:.05em;z-index:4}
+.ba-label.before{left:10px}.ba-label.after{right:10px}
+
+/* dashboard layout */
+#screen-dashboard{width:100%;min-height:100vh}
+.dash-shell{display:flex;min-height:100vh}
+.sidebar{width:220px;flex:none;border-right:1px solid var(--line);padding:22px 16px;display:flex;flex-direction:column;gap:2px}
+.side-brand{display:flex;align-items:center;gap:9px;font-weight:800;font-size:16px;padding:6px 10px 22px}
+.side-brand .dot3{display:grid;grid-template-columns:repeat(3,5px);gap:2px}
+.side-brand .dot3 i{width:5px;height:5px;border-radius:50%;background:var(--primary2)}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;font-size:13.5px;color:var(--muted);cursor:pointer}
+.nav-item:hover{background:rgba(255,255,255,.04);color:var(--text)}
+.nav-item.active{background:rgba(91,108,255,.12);color:var(--text)}
+.nav-spacer{flex:1}
+.main{flex:1;padding:30px 34px;overflow-y:auto}
+.main h1{font-size:24px;margin:0 0 4px}
+.main .sub{color:var(--muted);font-size:13.5px;margin-bottom:26px}
+.stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:28px}
+.stat-card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px}
+.stat-card span{font-size:12px;color:var(--muted)}
+.stat-card b{display:block;font-size:26px;margin-top:6px}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px;margin-bottom:22px}
+.panel h3{margin:0 0 14px;font-size:15px}
+
+/* feed editor grid */
+.feed-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
+@media(max-width:900px){.feed-grid{grid-template-columns:repeat(3,1fr)}}
+.feed-cell{position:relative;border-radius:6px;overflow:hidden;cursor:pointer;border:1px solid var(--line)}
+.feed-cell canvas{width:100%;display:block;aspect-ratio:1/1}
+.feed-cell .badge{position:absolute;top:5px;left:5px;font-size:9px;font-weight:800;padding:2px 6px;border-radius:6px;background:rgba(0,0,0,.55)}
+.feed-cell .opt{position:absolute;bottom:5px;right:5px;font-size:10px;background:rgba(80,226,158,.9);color:#07090D;border-radius:5px;padding:1px 5px;font-weight:800}
+
+/* modal cover editor */
+.modal-bg{position:fixed;inset:0;background:rgba(1,3,6,.82);backdrop-filter:blur(10px);z-index:200;display:none;place-items:center;padding:20px}
+.modal-bg.open{display:grid}
+.modal-box{width:min(760px,100%);max-height:88vh;overflow-y:auto;background:var(--card2);border:1px solid var(--line);border-radius:20px;padding:26px}
+.modal-close{float:right;background:transparent;border:0;color:#fff;font-size:22px;cursor:pointer}
+.covers-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin:18px 0}
+.cover-opt{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px;text-align:center;cursor:pointer}
+.cover-opt.selected{border-color:var(--primary2);box-shadow:0 0 0 2px rgba(91,108,255,.4)}
+.cover-opt canvas{width:100%;border-radius:8px;aspect-ratio:1/1}
+.cover-opt div.lbl{font-size:11.5px;font-weight:700;margin-top:6px;color:var(--muted)}
+.modal-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+
+/* brand system */
+.swatch-row{display:flex;gap:10px;margin-bottom:20px}
+.swatch{flex:1;height:64px;border-radius:10px;border:1px solid var(--line)}
+.tinygrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+
+/* scanning shimmer */
+.shimmer{position:relative;overflow:hidden}
+.shimmer::after{content:"";position:absolute;inset:0;background:linear-gradient(100deg,transparent,rgba(255,255,255,.08),transparent);animation:shimmer 1.4s infinite}
+@keyframes shimmer{0%{transform:translateX(-120%)}100%{transform:translateX(120%)}}
+
+::-webkit-scrollbar{width:8px}::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:4px}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- ===== ONBOARDING ===== -->
+<section id="screen-onboarding" class="container">
+  <div class="ob-grid">
+    <div>
+      <div class="ob-eyebrow">▣ FeedBrand AI</div>
+      <h1 class="ob-h1">Turn your existing Instagram into a <span>professional brand.</span></h1>
+      <p class="ob-lead">AI analyzes your current content, redesigns your covers and creates a consistent visual identity — automatically. Your content is already good. Make your profile look like it.</p>
+      <div class="ob-ctas">
+        <button class="btn primary" onclick="go('connect')">Connect Instagram →</button>
+        <button class="btn ghost" onclick="go('connect')">See how it works</button>
+      </div>
+      <div class="ob-note">Demo Mode available — no real Instagram credentials required to preview the full experience.</div>
+    </div>
+    <div class="ob-visual">
+      <div class="capbar"><span>@yoshlei55</span><span>Live preview</span></div>
+      <div class="ob-grid9" id="ob-preview"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== CONNECT ===== -->
+<section id="screen-connect" class="flow-screen hidden">
+  <div class="flow-card">
+    <span class="pill">Step 1 of 4</span>
+    <h1 style="margin-top:14px">Connect your Instagram</h1>
+    <p class="sub">We'll analyze your existing content. Nothing will be changed without your approval.</p>
+    <div class="profile-card">
+      <div class="avatar-ring"><div>🧑‍💻</div></div>
+      <div class="handle">@yoshlei55</div>
+      <div class="stats">
+        <div><b>46</b><span>Posts</span></div>
+        <div><b>753</b><span>Followers</span></div>
+        <div><b>4,362</b><span>Following</span></div>
+      </div>
+    </div>
+    <div class="info-box">🔒 We'll analyze your existing content. Nothing will be changed without your approval. Running in <b>Demo Mode</b> using a sample profile.</div>
+    <button class="btn primary block" onclick="startAnalysis()">Analyze my feed →</button>
+  </div>
+</section>
+
+<!-- ===== ANALYSIS ===== -->
+<section id="screen-analysis" class="flow-screen hidden">
+  <div class="flow-card" style="max-width:520px">
+    <span class="pill">Step 2 of 4</span>
+    <h1 style="margin-top:14px">Analyzing your profile</h1>
+    <p class="sub">FeedBrand AI is studying your existing content to understand your brand.</p>
+    <div class="progress-list" id="progress-list"></div>
+    <button class="btn primary block hidden" id="analysis-next" onclick="go('findings')">See my results →</button>
+  </div>
+</section>
+
+<!-- ===== FINDINGS ===== -->
+<section id="screen-findings" class="flow-screen hidden">
+  <div class="flow-card" style="max-width:600px">
+    <span class="pill">Step 2 of 4</span>
+    <h1 style="margin-top:14px">Your Visual Brand Score</h1>
+    <div class="score-ring" id="score-ring"><div class="inner"><div><div class="score-num" id="score-num">58</div><div class="score-label">/ 100</div></div></div></div>
+    <div class="metric-grid">
+      <div class="metric"><span>Visual consistency</span><b>42%</b><div class="bar"><div style="width:42%"></div></div></div>
+      <div class="metric"><span>Cover consistency</span><b>31%</b><div class="bar"><div style="width:31%"></div></div></div>
+      <div class="metric"><span>Color consistency</span><b>55%</b><div class="bar"><div style="width:55%"></div></div></div>
+      <div class="metric"><span>Content clarity</span><b>72%</b><div class="bar"><div style="width:72%"></div></div></div>
+    </div>
+    <div id="findings-list" style="text-align:left"></div>
+    <p class="sub" style="margin:22px 0 8px;text-align:left">Content categories detected:</p>
+    <div class="cat-chip-row" id="cat-chips"></div>
+    <button class="btn primary block" onclick="go('styles')">Choose my visual direction →</button>
+  </div>
+</section>
+
+<!-- ===== STYLE PICKER ===== -->
+<section id="screen-styles" class="flow-screen hidden">
+  <div class="flow-card" style="max-width:960px">
+    <span class="pill">Step 3 of 4</span>
+    <h1 style="margin-top:14px">Choose your visual direction</h1>
+    <p class="sub">AI generated these directions from your existing content. Pick one to preview a full transformation.</p>
+    <div class="style-grid" id="style-grid"></div>
+    <div style="display:flex;gap:10px;justify-content:center">
+      <button class="btn ghost" onclick="renderStyleGrid()">↻ Generate another direction</button>
+      <button class="btn primary" id="style-continue" disabled onclick="go('beforeafter')">See Before / After →</button>
+    </div>
+  </div>
+</section>
+
+<!-- ===== BEFORE/AFTER ===== -->
+<section id="screen-beforeafter" class="flow-screen hidden">
+  <div class="flow-card ba-wrap" style="max-width:820px">
+    <span class="pill">Step 4 of 4</span>
+    <h1 style="margin-top:14px">Your Instagram, transformed</h1>
+    <p class="sub">Drag the handle to compare. Same content — new visual identity.</p>
+    <div class="ba-slider-box" id="ba-box">
+      <span class="ba-label before">BEFORE</span><span class="ba-label after">AFTER</span>
+      <div class="ba-grid" id="ba-grid-full"></div>
+      <div class="ba-after" id="ba-after"><div class="ba-grid" id="ba-grid-after"></div></div>
+      <div class="ba-handle" id="ba-handle"></div>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:center;margin-top:26px">
+      <button class="btn ghost" onclick="go('styles')">← Try another style</button>
+      <button class="btn primary" onclick="transformFeed()">Transform my feed →</button>
+    </div>
+  </div>
+</section>
+
+<!-- ===== DASHBOARD ===== -->
+<section id="screen-dashboard" class="hidden">
+  <div class="dash-shell">
+    <div class="sidebar">
+      <div class="side-brand"><span class="dot3"><i></i><i></i><i></i><i></i><i></i><i></i></span>FeedBrand AI</div>
+      <div class="nav-item active" data-view="home" onclick="setDashView('home')">🏠 Home</div>
+      <div class="nav-item" data-view="feed" onclick="setDashView('feed')">▦ My Feed</div>
+      <div class="nav-item" data-view="analysis" onclick="go('findings')">✦ AI Analysis</div>
+      <div class="nav-item" data-view="brand" onclick="setDashView('brand')">◆ Brand System</div>
+      <div class="nav-item" data-view="covers" onclick="setDashView('feed')">▤ Covers</div>
+      <div class="nav-item" data-view="review" onclick="setDashView('review')">⇄ Review Mode</div>
+      <div class="nav-item" data-view="settings" onclick="setDashView('settings')">⚙ Settings</div>
+      <div class="nav-spacer"></div>
+      <div class="nav-item" style="opacity:.6">@yoshlei55 · Demo</div>
+    </div>
+    <div class="main" id="main">
+      <!-- injected per view -->
+    </div>
+  </div>
+</section>
+
+</div>
+
+<!-- ===== COVER MODAL ===== -->
+<div class="modal-bg" id="cover-modal">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeModal()">×</button>
+    <div id="modal-content"></div>
+  </div>
+</div>
+
+<script>
+/* =========================================================
+   FEEDBRAND AI — DEMO MODE (client-only mock)
+   ========================================================= */
+
+const CATEGORIES = [
+  {id:'ai', name:'AI', color:'#5B6CFF'},
+  {id:'cnc', name:'CNC', color:'#FF8A3D'},
+  {id:'3d', name:'3D Printing', color:'#A855F7'},
+  {id:'personal', name:'Personal', color:'#E5E7EB'},
+  {id:'cgi', name:'CGI', color:'#22C55E'},
+  {id:'design', name:'Design', color:'#EC4899'},
+  {id:'bts', name:'Behind the Scenes', color:'#14B8A6'},
+];
+
+const HEADLINES = {
+  ai:['5 AI TOOLS I USE DAILY','AI TOOLS YOU SHOULD TRY','MY FAVORITE AI STACK','AI CHANGED MY WORKFLOW','STOP DOING THIS MANUALLY'],
+  cnc:['CNC BUILD DAY','MACHINING THIS PART','FROM METAL TO FINISHED','CNC TIPS THAT WORK','WATCH THIS CUT'],
+  '3d':['3D PRINT TIME-LAPSE','PRINTING THIS TODAY','MY BEST 3D PRINT YET','FROM FILE TO PRINT','3D PRINTING HACKS'],
+  personal:['BEHIND MY WORKFLOW','A DAY IN MY STUDIO','WHY I STARTED THIS','MY HONEST TAKE','LET’S TALK'],
+  cgi:['CGI BREAKDOWN','MAKING THIS SCENE','RENDER PROGRESS','CGI VS REALITY','3 MONTHS OF WORK'],
+  design:['DESIGN PROCESS','BEFORE / AFTER DESIGN','DESIGNING THIS BRAND','5 DESIGN TIPS','WHAT MAKES THIS WORK'],
+  bts:['BEHIND THE SCENES','HOW IT’S MADE','SETUP TOUR','WHAT NOBODY SHOWS YOU','THE REAL PROCESS'],
+};
+
+const STYLES = [
+  {id:'creatorpro', name:'Creator Pro', primary:'#5B6CFF', secondary:'#0B0E14', accent:'#8B6CFF', font:'800 italic'},
+  {id:'editorial', name:'Editorial', primary:'#F7F8FA', secondary:'#111318', accent:'#C9A227', font:'700'},
+  {id:'moderntech', name:'Modern Tech', primary:'#00E5A0', secondary:'#050708', accent:'#5B6CFF', font:'800'},
+  {id:'minimal', name:'Minimal', primary:'#F7F8FA', secondary:'#1a1c22', accent:'#8F96A3', font:'600'},
+  {id:'bold', name:'Bold', primary:'#FF3B5C', secondary:'#0a0a0a', accent:'#FFD23F', font:'900'},
+  {id:'luxury', name:'Luxury', primary:'#D9C08A', secondary:'#0c0b09', accent:'#F7F8FA', font:'700'},
+  {id:'personalbrand', name:'Personal Brand', primary:'#FF8A3D', secondary:'#141014', accent:'#F7F8FA', font:'800'},
+  {id:'magazine', name:'Magazine', primary:'#F7F8FA', secondary:'#161616', accent:'#FF3B5C', font:'700'},
+];
+
+let POSTS = [];
+let selectedStyle = null;
+let selectedFeedPost = null;
+let selectedCoverIdx = 0;
+
+function seededRandom(seed){
+  let x = Math.sin(seed) * 10000;
+  return x - Math.floor(x);
+}
+
+function genPosts(n=46){
+  const arr=[];
+  for(let i=0;i<n;i++){
+    const cat = CATEGORIES[i % CATEGORIES.length];
+    const hl = HEADLINES[cat.id][Math.floor(seededRandom(i*7.3)*HEADLINES[cat.id].length)];
+    arr.push({
+      id:i,
+      category:cat.id,
+      headline:hl,
+      seed:i,
+      optimized:false,
+    });
+  }
+  return arr.reverse();
+}
+
+/* ---------- canvas cover rendering ---------- */
+function catOf(id){ return CATEGORIES.find(c=>c.id===id); }
+
+// chaotic "before" cover — inconsistent styles per post
+function drawBefore(canvas, post){
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width = 300, h = canvas.height = 300;
+  const s = post.seed;
+  const hueBase = (s*57)%360;
+  const g = ctx.createLinearGradient(0,0,w,h);
+  g.addColorStop(0, `hsl(${hueBase},55%,${20+ (s%3)*10}%)`);
+  g.addColorStop(1, `hsl(${(hueBase+120)%360},50%,${15+(s%4)*8}%)`);
+  ctx.fillStyle=g; ctx.fillRect(0,0,w,h);
+  // random shape
+  ctx.globalAlpha=.5;
+  ctx.fillStyle=`hsl(${(hueBase+200)%360},70%,60%)`;
+  const shape = s%3;
+  if(shape===0){ ctx.beginPath(); ctx.arc(w*seededRandom(s), h*seededRandom(s+1), 90, 0, 7); ctx.fill(); }
+  else if(shape===1){ ctx.fillRect(w*0.1, h*0.5, w*0.8, h*0.3); }
+  else { ctx.beginPath(); ctx.moveTo(0,h); ctx.lineTo(w*seededRandom(s+2),0); ctx.lineTo(w,h*seededRandom(s+3)); ctx.fill(); }
+  ctx.globalAlpha=1;
+  // random text placement / font / no consistency
+  if(s%2===0){
+    ctx.fillStyle='#fff';
+    ctx.font = (s%3===0?'italic bold':'bold') + ' ' + (20+ (s%3)*8) + 'px Inter, sans-serif';
+    const ty = s%2===0? h*0.25 : h*0.85;
+    const tx = 20;
+    ctx.textBaseline='middle';
+    wrapText(ctx, post.headline.split(' ').slice(0,2).join(' '), tx, ty, w-40, 24);
+  }
+}
+
+function wrapText(ctx,text,x,y,maxWidth,lineHeight){
+  const words = text.split(' ');
+  let line='', ly=y;
+  for(const word of words){
+    const test = line+word+' ';
+    if(ctx.measureText(test).width>maxWidth && line){
+      ctx.fillText(line, x, ly); line=word+' '; ly+=lineHeight;
+    } else line=test;
+  }
+  ctx.fillText(line,x,ly);
+}
+
+// consistent "after" cover — driven by brand style + category accent
+function drawAfter(canvas, post, style){
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width = 300, h = canvas.height = 300;
+  const cat = catOf(post.category);
+  ctx.fillStyle = style.secondary; ctx.fillRect(0,0,w,h);
+  // subtle base image texture derived from seed, tinted by style primary
+  const g = ctx.createRadialGradient(w*0.7,h*0.3,20,w*0.5,h*0.5,320);
+  g.addColorStop(0, hexAlpha(style.primary,0.28));
+  g.addColorStop(1, hexAlpha(style.secondary,1));
+  ctx.fillStyle=g; ctx.fillRect(0,0,w,h);
+  // bottom gradient for text legibility
+  const bg = ctx.createLinearGradient(0,h*0.55,0,h);
+  bg.addColorStop(0,'rgba(0,0,0,0)'); bg.addColorStop(1,'rgba(0,0,0,.75)');
+  ctx.fillStyle=bg; ctx.fillRect(0,0,w,h);
+  // category accent corner tab
+  ctx.fillStyle = cat.color;
+  ctx.fillRect(0,0,54,7);
+  // brand mark dot
+  ctx.beginPath(); ctx.arc(w-22,22,6,0,7); ctx.fillStyle=style.accent; ctx.fill();
+  // headline consistent bottom-left
+  ctx.fillStyle = style.primary;
+  ctx.textBaseline='alphabetic';
+  const weight = style.font.includes('900')?'900':style.font.includes('800')?'800':style.font.includes('700')?'700':'600';
+  const italic = style.font.includes('italic')?'italic ':'';
+  ctx.font = `${italic}${weight} 21px Inter, sans-serif`;
+  const lines = splitHeadline(post.headline);
+  let ly = h-58;
+  lines.forEach(l=>{ ctx.fillText(l, 18, ly); ly+=26; });
+  // category label
+  ctx.font='700 10px Inter, sans-serif';
+  ctx.fillStyle = cat.color;
+  ctx.fillText(cat.name.toUpperCase(), 18, h-14);
+}
+
+function splitHeadline(text){
+  const words = text.split(' ');
+  const mid = Math.ceil(words.length/2);
+  return [words.slice(0,mid).join(' '), words.slice(mid).join(' ')];
+}
+
+function hexAlpha(hex,a){
+  const c = hex.replace('#','');
+  const r=parseInt(c.substring(0,2),16), g=parseInt(c.substring(2,4),16), b=parseInt(c.substring(4,6),16);
+  return `rgba(${r},${g},${b},${a})`;
+}
+
+/* ---------- style preview grid (9 sample posts) ---------- */
+function drawStylePreview(container, style){
+  container.innerHTML='';
+  for(let i=0;i<9;i++){
+    const c = document.createElement('canvas');
+    container.appendChild(c);
+    drawAfter(c, POSTS[i], style);
+  }
+}
+
+/* ---------- navigation ---------- */
+function go(screen){
+  document.querySelectorAll('.app > section, #screen-dashboard').forEach(s=>s.classList.add('hidden'));
+  document.getElementById('screen-'+screen).classList.remove('hidden');
+  window.scrollTo(0,0);
+  if(screen==='findings') renderFindings();
+  if(screen==='styles') renderStyleGrid();
+  if(screen==='beforeafter') renderBeforeAfter();
+  if(screen==='dashboard') { renderDashboard(); }
+}
+
+/* onboarding preview grid */
+function renderOnboardingPreview(){
+  const el = document.getElementById('ob-preview');
+  el.innerHTML='';
+  for(let i=0;i<9;i++){
+    const c=document.createElement('canvas'); el.appendChild(c);
+    drawBefore(c, POSTS[i]);
+  }
+}
+
+/* ---------- analysis animation ---------- */
+const ANALYSIS_STEPS = [
+  'Analyzing visual consistency…',
+  'Detecting content categories…',
+  'Analyzing thumbnails…',
+  'Detecting dominant colors…',
+  'Analyzing typography…',
+  'Finding recurring subjects…',
+  'Analyzing personal branding…',
+];
+
+function startAnalysis(){
+  go('analysis');
+  const list = document.getElementById('progress-list');
+  list.innerHTML='';
+  ANALYSIS_STEPS.forEach((s,i)=>{
+    const d=document.createElement('div');
+    d.className='progress-item'; d.id='step-'+i;
+    d.innerHTML=`<span class="dot"></span><span>${s}</span>`;
+    list.appendChild(d);
+  });
+  document.getElementById('analysis-next').classList.add('hidden');
+  let i=0;
+  function step(){
+    if(i>0) document.getElementById('step-'+(i-1)).classList.remove('active');
+    if(i>=ANALYSIS_STEPS.length){
+      document.getElementById('analysis-next').classList.remove('hidden');
+      return;
+    }
+    const el = document.getElementById('step-'+i);
+    el.classList.add('active');
+    setTimeout(()=>{ el.classList.remove('active'); el.classList.add('done'); i++; step(); }, 480);
+  }
+  step();
+}
+
+/* ---------- findings ---------- */
+const FINDINGS = [
+  {ico:'⚠',text:'Your content is strong, but your covers use 7 different visual styles.'},
+  {ico:'🙂',text:'Your face appears frequently in your content. We recommend making it a recurring visual element.'},
+  {ico:'✦',text:'AI, CNC and 3D Printing are your strongest recurring content categories.'},
+  {ico:'Aa',text:'Your current feed does not have a consistent typography system.'},
+  {ico:'🎨',text:'You are using multiple colors that compete visually.'},
+  {ico:'◆',text:'Creating a unified visual system could make your content easier to recognize.'},
+];
+
+function renderFindings(){
+  const list = document.getElementById('findings-list');
+  list.innerHTML = FINDINGS.map(f=>`<div class="finding"><div class="ico">${f.ico}</div><div>${f.text}</div></div>`).join('');
+  const chips = document.getElementById('cat-chips');
+  chips.innerHTML = CATEGORIES.map(c=>`<div class="cat-chip"><span class="sw" style="background:${c.color}"></span>${c.name}</div>`).join('');
+  animateScore(58);
+}
+function animateScore(target){
+  const num = document.getElementById('score-num');
+  const ring = document.getElementById('score-ring');
+  let v=0;
+  const t=setInterval(()=>{
+    v+=2; if(v>=target){v=target; clearInterval(t);}
+    num.textContent=v;
+    ring.style.background = `conic-gradient(#5B6CFF ${v*3.6}deg, rgba(255,255,255,.08) 0deg)`;
+  },20);
+}
+
+/* ---------- style picker ---------- */
+function renderStyleGrid(){
+  const grid = document.getElementById('style-grid');
+  grid.innerHTML='';
+  selectedStyle = null;
+  document.getElementById('style-continue').disabled = true;
+  STYLES.forEach(style=>{
+    const card = document.createElement('div');
+    card.className='style-card';
+    card.innerHTML = `<div class="style-grid9"></div><div class="style-name">${style.name}</div>`;
+    card.onclick = ()=>{
+      document.querySelectorAll('.style-card').forEach(c=>c.classList.remove('selected'));
+      card.classList.add('selected');
+      selectedStyle = style;
+      document.getElementById('style-continue').disabled = false;
+    };
+    grid.appendChild(card);
+    drawStylePreview(card.querySelector('.style-grid9'), style);
+  });
+}
+
+/* ---------- before / after ---------- */
+function renderBeforeAfter(){
+  if(!selectedStyle) selectedStyle = STYLES[0];
+  const full = document.getElementById('ba-grid-full');
+  const after = document.getElementById('ba-grid-after');
+  full.innerHTML=''; after.innerHTML='';
+  const sample = POSTS.slice(0,9);
+  sample.forEach(p=>{
+    const c1=document.createElement('canvas'); full.appendChild(c1); drawBefore(c1,p);
+  });
+  sample.forEach(p=>{
+    const c2=document.createElement('canvas'); after.appendChild(c2); drawAfter(c2,p,selectedStyle);
+  });
+  initSlider();
+}
+function initSlider(){
+  const box = document.getElementById('ba-box');
+  const handle = document.getElementById('ba-handle');
+  const afterEl = document.getElementById('ba-after');
+  function setPct(pct){
+    pct = Math.max(4,Math.min(96,pct));
+    afterEl.style.width = pct+'%';
+    handle.style.left = pct+'%';
+  }
+  setPct(50);
+  let dragging=false;
+  const move = (clientX)=>{
+    const rect = box.getBoundingClientRect();
+    setPct(((clientX-rect.left)/rect.width)*100);
+  };
+  handle.onmousedown = ()=>dragging=true;
+  window.addEventListener('mouseup',()=>dragging=false);
+  window.addEventListener('mousemove',e=>{ if(dragging) move(e.clientX); });
+  handle.ontouchstart = ()=>dragging=true;
+  window.addEventListener('touchend',()=>dragging=false);
+  window.addEventListener('touchmove',e=>{ if(dragging){ move(e.touches[0].clientX); } });
+}
+
+function transformFeed(){
+  POSTS.forEach(p=>p.optimized=true);
+  go('dashboard');
+}
+
+/* ---------- dashboard ---------- */
+function setDashView(view){
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  const item = document.querySelector(`.nav-item[data-view="${view}"]`);
+  if(item) item.classList.add('active');
+  const main = document.getElementById('main');
+  if(view==='home') main.innerHTML = homeView();
+  if(view==='feed') { main.innerHTML = feedView(); renderFeedGrid(); }
+  if(view==='brand') main.innerHTML = brandView();
+  if(view==='review') { main.innerHTML = reviewView(); startReview(); }
+  if(view==='settings') main.innerHTML = settingsView();
+}
+function renderDashboard(){ setDashView('home'); }
+
+function homeView(){
+  const optCount = POSTS.filter(p=>p.optimized).length;
+  return `
+    <h1>Welcome back, @yoshlei55</h1>
+    <div class="sub">Here's how your Instagram brand is doing.</div>
+    <div class="stat-row">
+      <div class="stat-card"><span>FeedBrand Score</span><b>82</b></div>
+      <div class="stat-card"><span>Posts optimized</span><b>${optCount} / ${POSTS.length}</b></div>
+      <div class="stat-card"><span>Covers generated</span><b>${optCount*4}</b></div>
+      <div class="stat-card"><span>Brand consistency</span><b>91%</b></div>
+    </div>
+    <div class="panel">
+      <h3>Feed preview</h3>
+      <div class="feed-grid" id="home-preview"></div>
+    </div>
+    <div style="display:flex;gap:12px">
+      <button class="btn primary" onclick="setDashView('feed')">Continue optimizing →</button>
+      <button class="btn ghost" onclick="setDashView('brand')">View Brand System</button>
+    </div>
+  `;
+}
+
+function feedView(){
+  return `
+    <h1>My Feed</h1>
+    <div class="sub">${POSTS.length} posts imported · click a post to generate an AI cover.</div>
+    <div class="feed-grid" id="feed-grid"></div>
+  `;
+}
+
+function renderFeedGrid(){
+  const wraps = [document.getElementById('feed-grid'), document.getElementById('home-preview')].filter(Boolean);
+  wraps.forEach(grid=>{
+    grid.innerHTML='';
+    const list = grid.id==='home-preview'? POSTS.slice(0,12) : POSTS;
+    list.forEach(p=>{
+      const cell = document.createElement('div');
+      cell.className='feed-cell';
+      const cat = catOf(p.category);
+      cell.innerHTML = `<canvas></canvas><span class="badge" style="color:${cat.color}">${cat.name}</span>${p.optimized?'<span class="opt">✓ AI</span>':''}`;
+      cell.onclick = ()=>openCoverModal(p);
+      grid.appendChild(cell);
+      const c = cell.querySelector('canvas');
+      if(p.optimized) drawAfter(c,p,selectedStyle||STYLES[0]); else drawBefore(c,p);
+    });
+  });
+}
+
+/* ---------- cover generator modal ---------- */
+function openCoverModal(post){
+  selectedFeedPost = post;
+  selectedCoverIdx = 0;
+  const modal = document.getElementById('cover-modal');
+  const cat = catOf(post.category);
+  document.getElementById('modal-content').innerHTML = `
+    <h2 style="margin:0 0 4px">Post Cover AI</h2>
+    <p class="sub" style="margin:0 0 16px;text-align:left">Detected category: <b style="color:${cat.color}">${cat.name}</b> · Suggested headline: <b>${post.headline}</b></p>
+    <div class="covers-grid" id="cover-options"></div>
+    <div class="modal-actions">
+      <button class="btn primary" onclick="applyCover()">Use this cover</button>
+      <button class="btn ghost" onclick="regenerateCovers()">↻ Regenerate</button>
+      <button class="btn ghost" onclick="editHeadline()">✎ Change headline</button>
+    </div>
+  `;
+  modal.classList.add('open');
+  renderCoverOptions();
+}
+function coverOptionStyles(){
+  // 4 variations: brand style, + 3 alternates (high impact / minimal / editorial-ish)
+  const base = selectedStyle || STYLES[0];
+  return [
+    {label:'Consistent Brand', style: base},
+    {label:'High Impact', style: STYLES.find(s=>s.id==='bold')},
+    {label:'Minimal', style: STYLES.find(s=>s.id==='minimal')},
+    {label:'Editorial', style: STYLES.find(s=>s.id==='editorial')},
+  ];
+}
+function renderCoverOptions(){
+  const wrap = document.getElementById('cover-options');
+  wrap.innerHTML='';
+  coverOptionStyles().forEach((opt,idx)=>{
+    const div = document.createElement('div');
+    div.className='cover-opt'+(idx===selectedCoverIdx?' selected':'');
+    div.innerHTML = `<canvas></canvas><div class="lbl">OPTION ${idx+1} — ${opt.label}</div>`;
+    div.onclick=()=>{ selectedCoverIdx=idx; renderCoverOptions(); };
+    wrap.appendChild(div);
+    drawAfter(div.querySelector('canvas'), selectedFeedPost, opt.style);
+  });
+}
+function regenerateCovers(){
+  selectedFeedPost.seed = selectedFeedPost.seed + 0.37;
+  renderCoverOptions();
+}
+function editHeadline(){
+  const options = HEADLINES[selectedFeedPost.category];
+  const next = options[(options.indexOf(selectedFeedPost.headline)+1) % options.length];
+  selectedFeedPost.headline = next;
+  openCoverModal(selectedFeedPost);
+}
+function applyCover(){
+  selectedFeedPost.optimized = true;
+  selectedFeedPost.appliedStyle = coverOptionStyles()[selectedCoverIdx].style;
+  if(selectedFeedPost.appliedStyle) selectedStyle = selectedStyle || selectedFeedPost.appliedStyle;
+  closeModal();
+  renderFeedGrid();
+}
+function closeModal(){ document.getElementById('cover-modal').classList.remove('open'); }
+
+/* ---------- review mode (swipe) ---------- */
+let reviewQueue = [];
+function reviewView(){
+  return `
+    <h1>Review Mode</h1>
+    <div class="sub">Quickly approve AI-generated covers for your remaining posts.</div>
+    <div style="max-width:340px;margin:20px auto;text-align:center" id="review-stage"></div>
+  `;
+}
+function startReview(){
+  reviewQueue = POSTS.filter(p=>!p.optimized);
+  renderReviewCard();
+}
+function renderReviewCard(){
+  const stage = document.getElementById('review-stage');
+  if(!stage) return;
+  if(reviewQueue.length===0){ stage.innerHTML = `<p class="sub">All posts reviewed 🎉</p>`; return; }
+  const post = reviewQueue[0];
+  stage.innerHTML = `
+    <canvas id="review-canvas" style="width:100%;border-radius:14px;margin-bottom:16px"></canvas>
+    <div class="sub">${reviewQueue.length} remaining</div>
+    <div style="display:flex;gap:10px;justify-content:center;margin-top:10px">
+      <button class="btn ghost" onclick="reviewAction('skip')">Skip</button>
+      <button class="btn ghost" onclick="reviewAction('regen')">↻ Regenerate</button>
+      <button class="btn primary" onclick="reviewAction('approve')">Approve ✓</button>
+    </div>`;
+  drawAfter(document.getElementById('review-canvas'), post, selectedStyle||STYLES[0]);
+}
+function reviewAction(action){
+  const post = reviewQueue[0];
+  if(action==='approve'){ post.optimized=true; reviewQueue.shift(); }
+  if(action==='skip'){ reviewQueue.push(reviewQueue.shift()); }
+  if(action==='regen'){ post.seed+=0.5; }
+  renderReviewCard();
+}
+
+/* ---------- brand system view ---------- */
+function brandView(){
+  const s = selectedStyle || STYLES[0];
+  return `
+    <h1>Brand System</h1>
+    <div class="sub">Auto-generated from your selected direction: <b>${s.name}</b></div>
+    <div class="panel">
+      <h3>Colors</h3>
+      <div class="swatch-row">
+        <div class="swatch" style="background:${s.primary}"></div>
+        <div class="swatch" style="background:${s.secondary}"></div>
+        <div class="swatch" style="background:${s.accent}"></div>
+      </div>
+    </div>
+    <div class="panel">
+      <h3>Category system</h3>
+      <div class="tinygrid">
+        ${CATEGORIES.map(c=>`<div style="background:${c.color}22;border:1px solid ${c.color}55;border-radius:10px;padding:12px;text-align:center;font-size:12px;font-weight:700;color:${c.color}">${c.name}</div>`).join('')}
+      </div>
+    </div>
+    <div class="panel">
+      <h3>Sample covers</h3>
+      <div class="feed-grid" id="brand-sample"></div>
+    </div>
+  `;
+}
+
+/* ---------- settings ---------- */
+function settingsView(){
+  return `
+    <h1>Settings</h1>
+    <div class="panel"><h3>Product name</h3><input class="btn" style="width:100%;text-align:left" value="FeedBrand AI"></div>
+    <div class="panel"><h3>Instagram connection</h3><p class="sub">Connected via Demo Mode — @yoshlei55</p></div>
+  `;
+}
+
+/* ---------- init ---------- */
+POSTS = genPosts(46);
+renderOnboardingPreview();
+
+document.addEventListener('DOMContentLoaded', ()=>{
+  // hook post-view canvas renders that need post-DOM insertion
+  const obs = new MutationObserver(()=>{
+    const bs = document.getElementById('brand-sample');
+    if(bs && !bs.dataset.filled){
+      bs.dataset.filled='1';
+      POSTS.slice(0,12).forEach(p=>{ const c=document.createElement('canvas'); bs.appendChild(c); drawAfter(c,p,selectedStyle||STYLES[0]); });
+    }
+  });
+  obs.observe(document.getElementById('main'), {childList:true, subtree:true});
+});
+</script>
+</body></html>
