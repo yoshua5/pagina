@@ -10,7 +10,8 @@
 }
 *{box-sizing:border-box}
 html{scroll-behavior:smooth}
-body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,"Segoe UI",system-ui,-apple-system,sans-serif;overflow-x:hidden}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,"Segoe UI",system-ui,-apple-system,sans-serif;overflow-x:hidden;-webkit-text-size-adjust:100%}
+img,canvas{max-width:100%}
 a{color:inherit;text-decoration:none}
 button,input,textarea{font:inherit}
 .hidden{display:none!important}
@@ -159,6 +160,63 @@ button,input,textarea{font:inherit}
 @keyframes shimmer{0%{transform:translateX(-120%)}100%{transform:translateX(120%)}}
 
 ::-webkit-scrollbar{width:8px}::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:4px}
+
+/* ================= MOBILE ================= */
+@media(max-width:700px){
+  .container{padding:0 16px}
+  .ob-grid{padding:34px 0;gap:30px}
+  .ob-h1{font-size:32px}
+  .ob-lead{font-size:14.5px}
+  .ob-ctas{flex-direction:column;align-items:stretch}
+  .ob-ctas .btn{width:100%;justify-content:center}
+  .ob-visual{order:-1}
+
+  .flow-screen{padding:32px 14px;align-items:flex-start;min-height:auto}
+  .flow-card h1{font-size:22px}
+  .flow-card p.sub{font-size:13.5px;margin-bottom:22px}
+  .profile-card{padding:22px 16px}
+  .stats{gap:18px}
+  .stats b{font-size:16px}
+
+  .metric-grid{grid-template-columns:1fr 1fr;gap:8px}
+  .metric{padding:10px 12px}
+  .metric b{font-size:16px}
+
+  .style-grid{grid-template-columns:repeat(2,1fr);gap:10px}
+  .style-name{font-size:11.5px}
+
+  .ba-handle::after{width:32px;height:32px;font-size:13px}
+
+  /* dashboard: sidebar becomes a horizontal scrollable top bar */
+  .dash-shell{flex-direction:column;min-height:100dvh}
+  .sidebar{width:100%;flex-direction:row;align-items:center;overflow-x:auto;-webkit-overflow-scrolling:touch;padding:10px 12px;gap:4px;border-right:none;border-bottom:1px solid var(--line);white-space:nowrap}
+  .side-brand{padding:0 10px 0 0;flex:none}
+  .side-brand span:not(.dot3){display:none}
+  .nav-item{flex:none;padding:9px 12px}
+  .nav-spacer{display:none}
+  .sidebar>.nav-item:last-child{display:none}
+  .main{padding:20px 16px}
+  .main h1{font-size:20px}
+  .stat-row{grid-template-columns:repeat(2,1fr);gap:10px}
+  .stat-card{padding:14px}
+  .stat-card b{font-size:20px}
+  .panel{padding:16px}
+
+  .feed-grid{grid-template-columns:repeat(3,1fr);gap:4px}
+
+  .modal-box{padding:16px;border-radius:16px;max-height:92dvh}
+  .covers-grid{grid-template-columns:repeat(2,1fr);gap:10px}
+  .modal-actions{flex-direction:column}
+  .modal-actions .btn{width:100%;justify-content:center}
+
+  .score-ring{width:120px;height:120px}
+  .score-ring .inner{width:94px;height:94px}
+  .score-num{font-size:28px}
+}
+@media(max-width:380px){
+  .style-grid{grid-template-columns:1fr}
+  .stat-row{grid-template-columns:1fr 1fr}
+}
 </style>
 </head>
 <body>
@@ -188,19 +246,31 @@ button,input,textarea{font:inherit}
 <section id="screen-connect" class="flow-screen hidden">
   <div class="flow-card">
     <span class="pill">Step 1 of 4</span>
-    <h1 style="margin-top:14px">Connect your Instagram</h1>
-    <p class="sub">We'll analyze your existing content. Nothing will be changed without your approval.</p>
-    <div class="profile-card">
-      <div class="avatar-ring"><div>🧑‍💻</div></div>
-      <div class="handle">@yoshlei55</div>
-      <div class="stats">
-        <div><b>46</b><span>Posts</span></div>
-        <div><b>753</b><span>Followers</span></div>
-        <div><b>4,362</b><span>Following</span></div>
+    <h1 style="margin-top:14px" id="connect-title">Connect your Instagram</h1>
+    <p class="sub" id="connect-sub">We'll analyze your existing content. Nothing will be changed without your approval.</p>
+
+    <div id="connect-error" class="info-box hidden" style="background:rgba(255,59,92,.08);border-color:rgba(255,59,92,.3);color:#ffc4cf"></div>
+
+    <div id="connect-not-linked">
+      <div class="profile-card">
+        <div class="avatar-ring"><div>📷</div></div>
+        <div class="handle">No account connected yet</div>
       </div>
+      <button class="btn primary block" onclick="location.href='/api/instagram/login'">Connect Instagram →</button>
+      <div class="ob-note" style="margin:14px 0">Your Instagram must be a <b>Business or Creator</b> account (free to switch, in Instagram &rarr; Settings &rarr; Account type). Personal accounts can't authorize via the API.</div>
+      <button class="btn ghost block" onclick="useDemoMode()">Skip for now — use Demo Mode instead</button>
     </div>
-    <div class="info-box">🔒 We'll analyze your existing content. Nothing will be changed without your approval. Running in <b>Demo Mode</b> using a sample profile.</div>
-    <button class="btn primary block" onclick="startAnalysis()">Analyze my feed →</button>
+
+    <div id="connect-linked" class="hidden">
+      <div class="profile-card">
+        <div class="avatar-ring"><div id="connect-avatar-emoji">🧑‍💻</div></div>
+        <div class="handle" id="connect-handle">@yoshlei55</div>
+        <div class="stats" id="connect-stats"></div>
+      </div>
+      <div class="info-box" id="connect-mode-note">🔒 We'll analyze your existing content. Nothing will be changed without your approval.</div>
+      <button class="btn primary block" onclick="startAnalysis()">Analyze my feed →</button>
+      <button class="btn ghost block" id="connect-disconnect" style="margin-top:10px" onclick="disconnectInstagram()">Disconnect Instagram</button>
+    </div>
   </div>
 </section>
 
@@ -363,10 +433,42 @@ function genPosts(n=46){
 /* ---------- canvas cover rendering ---------- */
 function catOf(id){ return CATEGORIES.find(c=>c.id===id); }
 
+/* real-image support: when a post came from the real Instagram API it carries
+   an imageUrl. We load it once and redraw the canvas in place when it's ready. */
+const imageCache = {};
+function loadPostImage(post, onReady){
+  if(!post.imageUrl) return null;
+  let img = imageCache[post.imageUrl];
+  if(img && img.complete && img.naturalWidth) return img;
+  if(!img){
+    img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.src = post.imageUrl;
+    imageCache[post.imageUrl] = img;
+  }
+  img.addEventListener('load', ()=>{ if(onReady) onReady(); }, {once:true});
+  img.addEventListener('error', ()=>{ post.imageFailed = true; if(onReady) onReady(); }, {once:true});
+  return null;
+}
+function drawCoverImage(ctx,img,w,h){
+  const ir = img.naturalWidth/img.naturalHeight, cr=w/h;
+  let sx,sy,sw,sh;
+  if(ir>cr){ sh=img.naturalHeight; sw=sh*cr; sx=(img.naturalWidth-sw)/2; sy=0; }
+  else { sw=img.naturalWidth; sh=sw/cr; sx=0; sy=(img.naturalHeight-sh)/2; }
+  ctx.drawImage(img,sx,sy,sw,sh,0,0,w,h);
+}
+
 // chaotic "before" cover — inconsistent styles per post
 function drawBefore(canvas, post){
   const ctx = canvas.getContext('2d');
   const w = canvas.width = 300, h = canvas.height = 300;
+  if(post.imageUrl && !post.imageFailed){
+    // real posts: "before" is simply the actual, already-inconsistent thumbnail
+    const img = loadPostImage(post, ()=>drawBefore(canvas,post));
+    if(img){ drawCoverImage(ctx,img,w,h); return; }
+    ctx.fillStyle='#1a1c22'; ctx.fillRect(0,0,w,h);
+    return;
+  }
   const s = post.seed;
   const hueBase = (s*57)%360;
   const g = ctx.createLinearGradient(0,0,w,h);
@@ -410,11 +512,17 @@ function drawAfter(canvas, post, style){
   const w = canvas.width = 300, h = canvas.height = 300;
   const cat = catOf(post.category);
   ctx.fillStyle = style.secondary; ctx.fillRect(0,0,w,h);
-  // subtle base image texture derived from seed, tinted by style primary
-  const g = ctx.createRadialGradient(w*0.7,h*0.3,20,w*0.5,h*0.5,320);
-  g.addColorStop(0, hexAlpha(style.primary,0.28));
-  g.addColorStop(1, hexAlpha(style.secondary,1));
-  ctx.fillStyle=g; ctx.fillRect(0,0,w,h);
+  if(post.imageUrl && !post.imageFailed){
+    // real post: draw the actual photo, then apply the consistent brand treatment on top
+    const img = loadPostImage(post, ()=>drawAfter(canvas,post,style));
+    if(img) drawCoverImage(ctx,img,w,h);
+  } else {
+    // demo post: subtle base texture derived from seed, tinted by style primary
+    const g = ctx.createRadialGradient(w*0.7,h*0.3,20,w*0.5,h*0.5,320);
+    g.addColorStop(0, hexAlpha(style.primary,0.28));
+    g.addColorStop(1, hexAlpha(style.secondary,1));
+    ctx.fillStyle=g; ctx.fillRect(0,0,w,h);
+  }
   // bottom gradient for text legibility
   const bg = ctx.createLinearGradient(0,h*0.55,0,h);
   bg.addColorStop(0,'rgba(0,0,0,0)'); bg.addColorStop(1,'rgba(0,0,0,.75)');
@@ -466,10 +574,122 @@ function go(screen){
   document.querySelectorAll('.app > section, #screen-dashboard').forEach(s=>s.classList.add('hidden'));
   document.getElementById('screen-'+screen).classList.remove('hidden');
   window.scrollTo(0,0);
+  if(screen==='connect') refreshConnectScreen();
   if(screen==='findings') renderFindings();
   if(screen==='styles') renderStyleGrid();
   if(screen==='beforeafter') renderBeforeAfter();
   if(screen==='dashboard') { renderDashboard(); }
+}
+
+/* ---------- real Instagram connection ---------- */
+let isRealConnection = false;
+let realProfile = null;
+
+const CATEGORY_KEYWORDS = {
+  ai: ['ai','gpt','chatgpt','inteligencia artificial','openai','machine learning'],
+  cnc: ['cnc','router','machining','maquinado','fresadora'],
+  '3d': ['3d print','3d printing','impresion 3d','impresión 3d','filament','filamento'],
+  cgi: ['cgi','render','blender','vfx','3d model','cinema 4d'],
+  design: ['design','diseño','brand','logo','branding'],
+  bts: ['behind the scenes','bts','setup tour','studio tour'],
+};
+function guessCategory(caption){
+  if(!caption) return 'personal';
+  const c = caption.toLowerCase();
+  for(const [cat,words] of Object.entries(CATEGORY_KEYWORDS)){
+    if(words.some(w=>c.includes(w))) return cat;
+  }
+  return 'personal';
+}
+function makeHeadlineFromCaption(caption, cat){
+  if(caption){
+    const firstLine = caption.split('\n')[0].split(/[.!?]/)[0].trim();
+    const words = firstLine.split(/\s+/).filter(Boolean);
+    if(words.length>=2) return words.slice(0,6).join(' ').toUpperCase();
+  }
+  return HEADLINES[cat][0];
+}
+function mapRealMedia(media){
+  return media
+    .filter(m=>m.media_type!=='CAROUSEL_ALBUM' || m.thumbnail_url || m.media_url)
+    .map((m,i)=>{
+      const cat = guessCategory(m.caption);
+      return {
+        id: m.id,
+        category: cat,
+        headline: makeHeadlineFromCaption(m.caption, cat),
+        seed: i,
+        optimized: false,
+        imageUrl: m.media_type==='VIDEO' ? (m.thumbnail_url || m.media_url) : m.media_url,
+        permalink: m.permalink,
+      };
+    });
+}
+
+function useDemoMode(){
+  isRealConnection = false;
+  realProfile = null;
+  POSTS = genPosts(46);
+  startAnalysis();
+}
+
+function showConnectError(msg){
+  const box = document.getElementById('connect-error');
+  box.textContent = '⚠ '+msg;
+  box.classList.remove('hidden');
+}
+
+async function refreshConnectScreen(){
+  document.getElementById('connect-error').classList.add('hidden');
+  const linked = document.getElementById('connect-linked');
+  const notLinked = document.getElementById('connect-not-linked');
+  try{
+    const res = await fetch('/api/instagram/me');
+    const data = await res.json();
+    if(data.connected){
+      isRealConnection = true;
+      realProfile = data.profile;
+      POSTS = mapRealMedia(data.media || []);
+      if(POSTS.length===0){
+        showConnectError("We connected, but couldn't find any posts on this account yet.");
+      }
+      document.getElementById('connect-handle').textContent = '@'+(realProfile.username||'instagram');
+      document.getElementById('connect-stats').innerHTML = `
+        <div><b>${realProfile.media_count ?? '—'}</b><span>Posts</span></div>
+        <div><b>${realProfile.account_type ? realProfile.account_type[0]+realProfile.account_type.slice(1).toLowerCase() : '—'}</b><span>Account type</span></div>
+      `;
+      document.getElementById('connect-mode-note').innerHTML = '🔒 Connected to your real Instagram. We only read your existing posts — nothing is changed without your approval.';
+      linked.classList.remove('hidden');
+      notLinked.classList.add('hidden');
+    }else{
+      isRealConnection = false;
+      linked.classList.add('hidden');
+      notLinked.classList.remove('hidden');
+    }
+  }catch(e){
+    isRealConnection = false;
+    linked.classList.add('hidden');
+    notLinked.classList.remove('hidden');
+  }
+}
+
+async function disconnectInstagram(){
+  await fetch('/api/instagram/logout');
+  isRealConnection = false;
+  realProfile = null;
+  POSTS = genPosts(46);
+  refreshConnectScreen();
+}
+
+function consumeUrlParams(){
+  const params = new URLSearchParams(location.search);
+  const err = params.get('ig_error');
+  const connected = params.get('connected');
+  if(err || connected){
+    history.replaceState(null,'',location.pathname);
+    go('connect');
+    if(err) setTimeout(()=>showConnectError(decodeURIComponent(err)),50);
+  }
 }
 
 /* onboarding preview grid */
@@ -797,10 +1017,19 @@ function brandView(){
 
 /* ---------- settings ---------- */
 function settingsView(){
+  const status = isRealConnection
+    ? `Connected to your real Instagram — @${realProfile?.username||''}`
+    : 'Running in Demo Mode — sample profile @yoshlei55';
   return `
     <h1>Settings</h1>
     <div class="panel"><h3>Product name</h3><input class="btn" style="width:100%;text-align:left" value="FeedBrand AI"></div>
-    <div class="panel"><h3>Instagram connection</h3><p class="sub">Connected via Demo Mode — @yoshlei55</p></div>
+    <div class="panel">
+      <h3>Instagram connection</h3>
+      <p class="sub" style="margin-bottom:14px">${status}</p>
+      ${isRealConnection
+        ? '<button class="btn ghost" onclick="disconnectInstagram().then(()=>go(\'connect\'))">Disconnect Instagram</button>'
+        : '<button class="btn primary" onclick="location.href=\'/api/instagram/login\'">Connect real Instagram →</button>'}
+    </div>
   `;
 }
 
@@ -818,6 +1047,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
     }
   });
   obs.observe(document.getElementById('main'), {childList:true, subtree:true});
+  consumeUrlParams();
 });
 </script>
 </body></html>
